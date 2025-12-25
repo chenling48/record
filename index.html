@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber-DApp 交互面板 V3</title>
+    <title>Cyber-DApp 交互面板 V3.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/index.umd.min.js"></script>
     <style>
         :root {
@@ -11,7 +11,6 @@
             --dark-bg: #0a0e17;
             --card-bg: #161b22;
             --text-main: #e6edf3;
-            --accent-green: #2ecc71;
         }
 
         body {
@@ -38,7 +37,6 @@
 
         .header { text-align: center; margin-bottom: 25px; }
         .header h1 { color: var(--primary-blue); font-size: 24px; text-transform: uppercase; letter-spacing: 2px; margin: 0; }
-        .version { font-size: 10px; color: #555; }
 
         .status-bar {
             background: rgba(0, 212, 255, 0.05);
@@ -64,13 +62,9 @@
 
         .btn-connect { background: linear-gradient(90deg, #00d4ff, #0055ff); color: white; box-shadow: 0 4px 15px rgba(0, 85, 255, 0.3); }
         .btn-action { background: #21262d; color: white; border: 1px solid #30363d; }
-        .btn-action:hover { border-color: var(--primary-blue); box-shadow: 0 0 10px rgba(0, 212, 255, 0.2); }
-        .btn-donate { background: var(--primary-blue); color: black; margin-top: 5px; }
-        .btn-donate:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn-action:hover { border-color: var(--primary-blue); }
+        .btn-donate { background: var(--primary-blue); color: black; }
 
-        .input-group { margin: 15px 0; text-align: left; }
-        label { font-size: 12px; color: #8b949e; margin-left: 5px; }
-        
         input {
             width: 100%;
             padding: 12px;
@@ -81,10 +75,7 @@
             color: white;
             margin-top: 5px;
             outline: none;
-            font-size: 14px;
         }
-
-        input:focus { border-color: var(--primary-blue); }
 
         .faucet-link {
             display: block;
@@ -94,9 +85,8 @@
             text-decoration: none;
             font-size: 13px;
         }
-        .faucet-link:hover { color: var(--primary-blue); }
 
-        #logText { font-size: 12px; color: #8b949e; margin-top: 15px; text-align: center; min-height: 18px; }
+        #logText { font-size: 12px; color: var(--primary-blue); margin-top: 15px; text-align: center; min-height: 18px; }
     </style>
 </head>
 <body>
@@ -104,23 +94,20 @@
 <div class="dapp-container">
     <div class="header">
         <h1>Cyber Portal</h1>
-        <div class="version">V3.0 CUSTOM DONATION</div>
     </div>
 
     <div class="status-bar">
         <div id="addrDisplay" style="font-size: 13px;">钱包：未连接</div>
         <div id="balanceDisplay" class="balance-tag">0.0000 ETH</div>
-        <div id="networkStatus" style="font-size: 11px; margin-top: 5px; color: #fa7a18;">⚠️ 请确保在 Arb Sepolia</div>
+        <div id="networkStatus" style="font-size: 11px; margin-top: 5px; color: #fa7a18;">⚠️ 网络检测中...</div>
     </div>
 
-    <button class="btn btn-connect" id="connectBtn" onclick="initWallet()">连接主流钱包</button>
+    <button class="btn btn-connect" id="connectBtn" onclick="initWallet()">链接钱包</button>
     
     <div style="margin: 20px 0; height: 1px; background: #30363d;"></div>
 
-    <div class="input-group">
-        <label>合约互动 (Address: 0xAd07...)</label>
-        <input type="text" id="msgInput" placeholder="输入你想留在链上的话...">
-    </div>
+    <div style="text-align:left; font-size:12px; color:#8b949e; margin-bottom:5px;">合约留言互动</div>
+    <input type="text" id="msgInput" placeholder="输入内容...">
     <div style="display: flex; gap: 10px;">
         <button class="btn btn-action" onclick="callSetMessage()" style="flex: 2;">更新留言</button>
         <button class="btn btn-action" onclick="callGetMessage()" style="flex: 1;">查看</button>
@@ -128,15 +115,13 @@
 
     <div style="margin: 20px 0; height: 1px; background: #30363d;"></div>
 
-    <div class="input-group">
-        <label>打赏 ETH 到开发者钱包</label>
-        <input type="number" id="donateAmount" step="0.001" value="0.001" placeholder="输入打赏金额 (ETH)">
-    </div>
-    <button class="btn btn-donate" onclick="donateEth()">立即打赏</button>
+    <div style="text-align:left; font-size:12px; color:#8b949e; margin-bottom:5px;">自定义打赏 (ETH)</div>
+    <input type="number" id="donateAmount" step="0.001" value="0.001">
+    <button class="btn btn-donate" onclick="donateEth()">立即打赏给作者</button>
 
-    <a href="https://www.alchemy.com/faucets/arbitrum-sepolia" target="_blank" class="faucet-link">⛽ 缺少测试币？点击前往领水站</a>
+    <a href="https://www.alchemy.com/faucets/arbitrum-sepolia" target="_blank" class="faucet-link">⛽ 点击前往领水站 (Alchemy)</a>
     
-    <div id="logText">系统就绪</div>
+    <div id="logText">等待连接...</div>
 </div>
 
 <script>
@@ -153,98 +138,95 @@
 
     async function initWallet() {
         const uiLog = document.getElementById('logText');
-        const injectedProvider = window.okxwallet || window.ethereum;
+        const external = window.okxwallet || window.ethereum;
 
-        if (!injectedProvider) {
-            alert("未检测到钱包！");
+        if (!external) {
+            alert("未检测到钱包插件！");
             return;
         }
 
         try {
-            uiLog.innerText = "唤起钱包中...";
-            const accounts = await injectedProvider.request({ method: 'eth_requestAccounts' });
+            uiLog.innerText = "正在请求钱包授权...";
+            await external.request({ method: 'eth_requestAccounts' });
             
-            provider = new ethers.BrowserProvider(injectedProvider);
+            provider = new ethers.BrowserProvider(external);
             signer = await provider.getSigner();
             
             const network = await provider.getNetwork();
             if (network.chainId !== ARB_SEPOLIA_ID) {
-                uiLog.innerText = "网络错误！正在请求切换...";
+                uiLog.innerText = "请在钱包中切换到 Arb Sepolia";
                 try {
-                    await injectedProvider.request({
+                    await external.request({
                         method: 'wallet_switchEthereumChain',
                         params: [{ chainId: '0x66eee' }],
                     });
-                } catch (e) { alert("请手动切换至 Arbitrum Sepolia"); return; }
+                } catch (e) { alert("网络错误：请在钱包内手动切换到 Arbitrum Sepolia"); return; }
             }
 
             contract = new ethers.Contract(CONTRACT_ADDR, ABI, signer);
+            const address = await signer.getAddress();
             
-            const address = accounts[0];
             document.getElementById('addrDisplay').innerText = `已连接: ${address.substring(0,6)}...${address.substring(38)}`;
             document.getElementById('networkStatus').innerText = "✅ 已接入 Arbitrum Sepolia";
             document.getElementById('networkStatus').style.color = "#2ecc71";
-            document.getElementById('connectBtn').innerText = "已成功连接";
+            document.getElementById('connectBtn').innerText = "钱包已绑定";
             
-            updateBalance(address);
-            uiLog.innerText = "Ready to Sync";
+            const balance = await provider.getBalance(address);
+            document.getElementById('balanceDisplay').innerText = `${parseFloat(ethers.formatEther(balance)).toFixed(4)} ETH`;
+            uiLog.innerText = "交互系统就绪";
         } catch (err) {
+            uiLog.innerText = "连接被取消";
             console.error(err);
-            uiLog.innerText = "连接被中断";
         }
     }
 
-    async function updateBalance(address) {
-        const balance = await provider.getBalance(address);
-        document.getElementById('balanceDisplay').innerText = `${parseFloat(ethers.formatEther(balance)).toFixed(4)} ETH`;
-    }
-
     async function callGetMessage() {
-        if (!contract) return alert("请先连接钱包");
+        if (!contract) return alert("请先链接钱包");
         try {
             const msg = await contract.message();
-            alert("链上最新内容: " + msg);
-        } catch (e) { console.error(e); }
+            alert("链上数据内容: " + msg);
+        } catch (e) { alert("读取失败"); }
     }
 
     async function callSetMessage() {
-        if (!contract) return alert("请先连接钱包");
+        if (!contract) return alert("请先链接钱包");
         const val = document.getElementById('msgInput').value;
         if (!val) return alert("内容不能为空");
         
         try {
-            document.getElementById('logText').innerText = "等待区块确认...";
-            const tx = await contract.setMessage(val);
+            document.getElementById('logText').innerText = "正在唤起签名确认窗口...";
+            // 增加手动 GasLimit 确保弹窗弹出
+            const tx = await contract.setMessage(val, {
+                gasLimit: 120000
+            });
+            document.getElementById('logText').innerText = "交易打包中，请稍候...";
             await tx.wait();
-            document.getElementById('logText').innerText = "上链成功！";
-            alert("留言已更新");
+            document.getElementById('logText').innerText = "更新成功！";
+            alert("上链成功！");
         } catch (e) { 
-            document.getElementById('logText').innerText = "交易已取消";
+            document.getElementById('logText').innerText = "签名取消或失败";
+            console.error(e);
         }
     }
 
     async function donateEth() {
-        if (!signer) return alert("请先连接钱包");
+        if (!signer) return alert("请先链接钱包");
         const amount = document.getElementById('donateAmount').value;
-        
-        if (!amount || amount <= 0) return alert("请输入有效的打赏金额");
+        if (!amount || amount <= 0) return alert("金额无效");
 
         try {
-            document.getElementById('logText').innerText = `正在发起 ${amount} ETH 的转账...`;
+            document.getElementById('logText').innerText = "准备发起转账签名...";
             const tx = await signer.sendTransaction({
                 to: DONATE_ADDR,
-                value: ethers.parseEther(amount.toString())
+                value: ethers.parseEther(amount.toString()),
+                gasLimit: 50000
             });
-            
-            document.getElementById('logText').innerText = "转账确认中...";
+            document.getElementById('logText').innerText = "转账中...";
             await tx.wait();
-            
-            alert("感谢您的支持！");
-            document.getElementById('logText').innerText = "打赏成功！感谢支持。";
-            updateBalance(await signer.getAddress()); // 更新余额显示
+            alert("打赏成功，感谢支持！");
+            document.getElementById('logText').innerText = "打赏已完成";
         } catch (e) {
-            console.error(e);
-            document.getElementById('logText').innerText = "打赏已取消";
+            document.getElementById('logText').innerText = "转账已取消";
         }
     }
 </script>
