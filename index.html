@@ -3,43 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Portal V4.1 - Particle Edition</title>
+    <title>Cyber Portal V4.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/index.umd.min.js"></script>
     <style>
         :root {
             --primary-blue: #00d4ff;
             --dark-bg: #030508;
-            --card-bg: rgba(22, 27, 34, 0.85); /* 半透明背景，透出特效 */
+            --card-bg: rgba(22, 27, 34, 0.85);
             --text-main: #e6edf3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
             background-color: var(--dark-bg);
             color: var(--text-main);
             font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            overflow: hidden; /* 防止特效导致的滚动条 */
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
         }
 
-        /* 特效画布层 */
         #particle-canvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1; /* 放在所有内容下面 */
+            z-index: -1;
         }
 
         .dapp-container {
             width: 90%;
             max-width: 480px;
             background: var(--card-bg);
-            backdrop-filter: blur(10px); /* 毛玻璃效果 */
+            backdrop-filter: blur(10px);
             border: 1px solid rgba(48, 54, 61, 0.8);
             border-radius: 20px;
             padding: 30px;
@@ -47,8 +51,22 @@
             z-index: 10;
         }
 
-        .header h1 { color: var(--primary-blue); font-size: 22px; text-transform: uppercase; letter-spacing: 2px; text-align: center; margin: 0;}
-        
+        .header h1 {
+            color: var(--primary-blue);
+            font-size: 22px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+            margin: 0 0 5px 0;
+        }
+
+        .header p {
+            text-align: center;
+            font-size: 10px;
+            color: #555;
+            margin: 0;
+        }
+
         .status-bar {
             background: rgba(0, 212, 255, 0.05);
             border: 1px solid rgba(0, 212, 255, 0.2);
@@ -58,76 +76,359 @@
             text-align: center;
         }
 
-        .balance-tag { color: var(--primary-blue); font-weight: bold; font-size: 24px; margin: 5px 0; }
-        .wallet-options { display: flex; gap: 10px; margin-bottom: 20px; }
-        
-        .btn { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-okx { background: #fff; color: #000; }
-        .btn-mm { background: #f6851b; color: white; }
-        .btn-action { background: #21262d; color: white; border: 1px solid #30363d; }
-        .btn-donate { background: var(--primary-blue); color: black; font-size: 16px; width: 100%; }
+        .status-bar > div {
+            margin: 5px 0;
+        }
 
-        input { width: 100%; padding: 12px; box-sizing: border-box; background: rgba(13, 17, 23, 0.8); border: 1px solid #30363d; border-radius: 8px; color: white; margin-top: 5px; outline: none; }
-        #logText { font-size: 11px; color: var(--primary-blue); margin-top: 15px; text-align: center; font-family: monospace; }
-        .faucet-link { display: block; text-align: center; margin-top: 15px; color: #8b949e; font-size: 12px; text-decoration: none; }
+        .balance-tag {
+            color: var(--primary-blue);
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 16px;
+        }
+
+        .btn-connect {
+            background: var(--primary-blue);
+            color: black;
+        }
+
+        .btn-action {
+            background: #21262d;
+            color: white;
+            border: 1px solid #30363d;
+            font-size: 14px;
+        }
+
+        .btn-donate {
+            background: var(--primary-blue);
+            color: black;
+        }
+
+        .btn-disconnect {
+            background: #fa7a18;
+            color: white;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            background: rgba(13, 17, 23, 0.8);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+        }
+
+        input::placeholder {
+            color: #8b949e;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn-row .btn {
+            margin: 0;
+        }
+
+        #logText {
+            font-size: 11px;
+            color: var(--primary-blue);
+            margin-top: 15px;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        .divider {
+            margin: 15px 0;
+            height: 1px;
+            background: #333;
+        }
+
+        .faucet-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #8b949e;
+            font-size: 12px;
+            text-decoration: none;
+        }
+
+        .faucet-link:hover {
+            color: var(--primary-blue);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: rgba(22, 27, 34, 0.95);
+            border: 1px solid rgba(48, 54, 61, 0.8);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 420px;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            color: var(--primary-blue);
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #8b949e;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wallet-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .wallet-option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: rgba(13, 17, 23, 0.6);
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .wallet-option:hover:not(.disabled) {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: var(--primary-blue);
+        }
+
+        .wallet-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .wallet-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 15px;
+            border-radius: 10px;
+        }
+
+        .wallet-icon img {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+        }
+
+        .wallet-info {
+            flex: 1;
+        }
+
+        .wallet-name {
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .wallet-status {
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        .wallet-status.installed {
+            color: #2ecc71;
+        }
+
+        .wallet-status.not-installed {
+            color: #fa7a18;
+        }
+
+        .divider-text {
+            text-align: center;
+            color: #8b949e;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+
+        .other-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .other-option {
+            padding: 12px;
+            background: rgba(13, 17, 23, 0.6);
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #8b949e;
+        }
+
+        .other-option:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: var(--primary-blue);
+            color: white;
+        }
+
+        .footer-text {
+            text-align: center;
+            font-size: 12px;
+            color: #8b949e;
+            margin-top: 10px;
+        }
+
+        .footer-text a {
+            color: var(--primary-blue);
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
 
 <canvas id="particle-canvas"></canvas>
 
+<!-- 钱包连接模态框 -->
+<div class="modal-overlay" id="walletModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2>连接钱包</h2>
+            <button class="close-btn" onclick="closeWalletModal()">×</button>
+        </div>
+        <div class="wallet-options" id="walletOptions"></div>
+    </div>
+</div>
+
+<!-- 主容器 -->
 <div class="dapp-container">
     <div class="header">
         <h1>Cyber Portal V4.1</h1>
-        <p style="text-align:center; font-size: 10px; color: #555; margin-top:5px;">AI-GENERATED NEURAL NETWORK UI</p>
+        <p>AI-GENERATED NEURAL NETWORK UI</p>
     </div>
 
-    <div class="status-bar">
-        <div id="addrDisplay" style="font-size: 12px; color: #8b949e;">等待钱包连接...</div>
-        <div id="balanceDisplay" class="balance-tag">0.0000 ETH</div>
-        <div id="networkStatus" style="font-size: 11px; color: #fa7a18;">● 离线状态</div>
+    <!-- 未连接状态 -->
+    <div id="disconnected-view">
+        <div class="status-bar">
+            <div style="font-size: 12px; color: #8b949e;">等待钱包连接...</div>
+            <div class="balance-tag">0.0000 ETH</div>
+            <div style="font-size: 11px; color: #fa7a18;">● 离线状态</div>
+        </div>
+        <button class="btn btn-connect" onclick="openWalletModal()">连接钱包</button>
     </div>
 
-    <div class="wallet-options">
-        <button class="btn btn-okx" onclick="connect('okx')">链接 OKX 钱包</button>
-        <button class="btn btn-mm" onclick="connect('mm')">链接 MetaMask</button>
+    <!-- 已连接状态 -->
+    <div id="connected-view" class="hidden">
+        <div class="status-bar">
+            <div id="addr-display" style="font-size: 12px; color: #8b949e;">ADDR: ...</div>
+            <div id="balance-display" class="balance-tag">0.0000 ETH</div>
+            <div style="font-size: 11px; color: #2ecc71;">● ONLINE</div>
+        </div>
+
+        <input type="text" id="msg-input" placeholder="输入新的链上留言...">
+        <div class="btn-row">
+            <button class="btn btn-action" onclick="setMessage()" style="flex: 2;">更新留言</button>
+            <button class="btn btn-action" onclick="getMessage()" style="flex: 1;">查看</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <input type="number" id="donate-amount" step="0.001" value="0.001" min="0">
+        <button class="btn btn-donate" onclick="donate()">立即打赏签名</button>
+
+        <a href="https://www.alchemy.com/faucets/arbitrum-sepolia" target="_blank" class="faucet-link">⛽ 缺少测试币？点击前往领水站</a>
+
+        <button class="btn btn-action btn-disconnect" onclick="disconnect()">断开钱包连接</button>
     </div>
-    
-    <input type="text" id="msgInput" placeholder="输入新的链上留言...">
-    <div style="display: flex; gap: 8px;">
-        <button class="btn btn-action" onclick="callSetMessage()" style="flex: 2;">更新留言</button>
-        <button class="btn btn-action" onclick="callGetMessage()" style="flex: 1;">查看</button>
-    </div>
 
-    <div style="margin: 15px 0; height: 1px; background: #333;"></div>
-
-    <input type="number" id="donateAmount" step="0.001" value="0.001">
-    <button class="btn btn-donate" onclick="donateEth()">立即打赏签名</button>
-
-    <a href="https://www.alchemy.com/faucets/arbitrum-sepolia" target="_blank" class="faucet-link">⛽ 缺少测试币？点击前往领水站</a>
-    
     <div id="logText">SYSTEM: STANDBY</div>
 </div>
 
 <script>
-    /* --- 粒子特效逻辑 --- */
+    // 改进的粒子特效 - 自由随意运动，鼠标接近才链接
     const canvas = document.getElementById('particle-canvas');
     const ctx = canvas.getContext('2d');
     let particles = [];
-    const mouse = { x: null, y: null, radius: 150 };
+    const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2, radius: 120 };
 
-    window.addEventListener('mousemove', (e) => { mouse.x = e.x; mouse.y = e.y; });
-    window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; initParticles(); });
+    window.addEventListener('mousemove', (e) => {
+        mouse.x = e.x;
+        mouse.y = e.y;
+    });
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
 
     class Particle {
         constructor() {
             this.x = Math.random() * canvas.width;
             this.y = Math.random() * canvas.height;
-            this.size = Math.random() * 2 + 1;
-            this.baseX = this.x;
-            this.baseY = this.y;
-            this.density = (Math.random() * 30) + 1;
+            this.size = Math.random() * 1.5 + 0.5;
+            this.vx = (Math.random() - 0.5) * 1.5;
+            this.vy = (Math.random() - 0.5) * 1.5;
+            this.originalVx = this.vx;
+            this.originalVy = this.vy;
         }
+
         draw() {
             ctx.fillStyle = 'rgba(0, 212, 255, 0.8)';
             ctx.beginPath();
@@ -135,29 +436,43 @@
             ctx.closePath();
             ctx.fill();
         }
+
         update() {
             let dx = mouse.x - this.x;
             let dy = mouse.y - this.y;
             let distance = Math.sqrt(dx * dx + dy * dy);
-            let forceDirectionX = dx / distance;
-            let forceDirectionY = dy / distance;
-            let maxDistance = mouse.radius;
-            let force = (maxDistance - distance) / maxDistance;
-            let directionX = forceDirectionX * force * this.density;
-            let directionY = forceDirectionY * force * this.density;
 
+            // 鼠标靠近时才被吸引
             if (distance < mouse.radius) {
-                this.x -= directionX;
-                this.y -= directionY;
+                let forceX = (dx / distance) * 0.15;
+                let forceY = (dy / distance) * 0.15;
+                this.vx += forceX;
+                this.vy += forceY;
+
+                // 限制速度
+                let speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (speed > 3) {
+                    this.vx = (this.vx / speed) * 3;
+                    this.vy = (this.vy / speed) * 3;
+                }
             } else {
-                if (this.x !== this.baseX) {
-                    let dx = this.x - this.baseX;
-                    this.x -= dx / 10;
-                }
-                if (this.y !== this.baseY) {
-                    let dy = this.y - this.baseY;
-                    this.y -= dy / 10;
-                }
+                // 恢复自由运动
+                this.vx += (this.originalVx - this.vx) * 0.02;
+                this.vy += (this.originalVy - this.vy) * 0.02;
+            }
+
+            // 更新位置
+            this.x += this.vx;
+            this.y += this.vy;
+
+            // 边界反弹
+            if (this.x - this.size < 0 || this.x + this.size > canvas.width) {
+                this.vx *= -1;
+                this.x = Math.max(this.size, Math.min(canvas.width - this.size, this.x));
+            }
+            if (this.y - this.size < 0 || this.y + this.size > canvas.height) {
+                this.vy *= -1;
+                this.y = Math.max(this.size, Math.min(canvas.height - this.size, this.y));
             }
         }
     }
@@ -166,22 +481,27 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         particles = [];
-        for (let i = 0; i < 150; i++) particles.push(new Particle());
+        for (let i = 0; i < 100; i++) {
+            particles.push(new Particle());
+        }
     }
 
     function animate() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
         for (let i = 0; i < particles.length; i++) {
-            particles[i].draw();
             particles[i].update();
-            // 连线逻辑
-            for (let j = i; j < particles.length; j++) {
+            particles[i].draw();
+
+            // 绘制连线（只在接近时）
+            for (let j = i + 1; j < particles.length; j++) {
                 let dx = particles[i].x - particles[j].x;
                 let dy = particles[i].y - particles[j].y;
                 let dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 100) {
-                    ctx.strokeStyle = 'rgba(0, 212, 255,' + (1 - dist/100) * 0.2 + ')';
-                    ctx.lineWidth = 1;
+                
+                if (dist < 80) {
+                    ctx.strokeStyle = 'rgba(0, 212, 255,' + (1 - dist / 80) * 0.15 + ')';
+                    ctx.lineWidth = 0.8;
                     ctx.beginPath();
                     ctx.moveTo(particles[i].x, particles[i].y);
                     ctx.lineTo(particles[j].x, particles[j].y);
@@ -191,58 +511,204 @@
         }
         requestAnimationFrame(animate);
     }
+
     initParticles();
     animate();
 
-    /* --- Web3 合约逻辑 --- */
+    // Web3 逻辑
     const CONTRACT_ADDR = "0xAd074eF8dFa3c625a53185450F24203bC35160F6";
     const DONATE_ADDR = "0x2d2f8716607d77d3389af77e0f47e559b8b6c36a";
-    const ABI = ["function message() public view returns (string)", "function setMessage(string memory _newMsg) public"];
-    let provider, signer, contract;
+    const ABI = [
+        "function message() public view returns (string)",
+        "function setMessage(string memory _newMsg) public"
+    ];
 
-    async function connect(type) {
-        let injected = (type === 'okx') ? window.okxwallet : window.ethereum;
-        if (!injected) return alert("未检测到钱包插件");
+    let provider = null;
+    let signer = null;
+    let contract = null;
+
+    const WALLETS = {
+        metamask: {
+            name: 'MetaMask',
+            emoji: '🦊',
+            bgColor: '#f6851b',
+            getProvider: () => window.ethereum
+        },
+        okx: {
+            name: 'OKX Wallet',
+            emoji: '⛓️',
+            bgColor: '#000',
+            getProvider: () => window.okxwallet || (window.okx && window.okx.wallet)
+        },
+        coinbase: {
+            name: 'Coinbase Wallet',
+            emoji: '🔵',
+            bgColor: '#1652f0',
+            getProvider: () => window.coinbaseWalletProvider
+        }
+    };
+
+    function renderWalletOptions() {
+        const container = document.getElementById('walletOptions');
+        container.innerHTML = '';
+
+        Object.entries(WALLETS).forEach(([key, wallet]) => {
+            const isInstalled = !!wallet.getProvider();
+            const el = document.createElement('div');
+            el.className = `wallet-option ${isInstalled ? '' : 'disabled'}`;
+            if (isInstalled) {
+                el.onclick = () => connectWallet(key);
+            }
+
+            el.innerHTML = `
+                <div class="wallet-icon" style="background-color: ${wallet.bgColor}; font-size: 24px;">
+                    ${wallet.emoji}
+                </div>
+                <div class="wallet-info">
+                    <div class="wallet-name">${wallet.name}</div>
+                    <div class="wallet-status ${isInstalled ? 'installed' : 'not-installed'}">
+                        ${isInstalled ? '✓ INSTALLED' : '未安装'}
+                    </div>
+                </div>
+            `;
+            container.appendChild(el);
+        });
+    }
+
+    function openWalletModal() {
+        renderWalletOptions();
+        document.getElementById('walletModal').classList.add('active');
+    }
+
+    function closeWalletModal() {
+        document.getElementById('walletModal').classList.remove('active');
+    }
+
+    async function connectWallet(walletKey) {
         try {
-            const accounts = await injected.request({ method: 'eth_requestAccounts' });
-            provider = new ethers.BrowserProvider(injected);
+            const wallet = WALLETS[walletKey];
+            const walletProvider = wallet.getProvider();
+
+            if (!walletProvider) {
+                alert(`请先安装 ${wallet.name}`);
+                return;
+            }
+
+            const accounts = await walletProvider.request({ method: 'eth_requestAccounts' });
+            provider = new ethers.BrowserProvider(walletProvider);
             signer = await provider.getSigner();
             contract = new ethers.Contract(CONTRACT_ADDR, ABI, signer);
-            document.getElementById('addrDisplay').innerText = `ADDR: ${accounts[0].substring(0,8)}...${accounts[0].substring(34)}`;
-            const balance = await provider.getBalance(accounts[0]);
-            document.getElementById('balanceDisplay').innerText = `${parseFloat(ethers.formatEther(balance)).toFixed(4)} ETH`;
-            document.getElementById('networkStatus').innerText = "● ONLINE";
-            document.getElementById('networkStatus').style.color = "#2ecc71";
-            document.getElementById('logText').innerText = "SYSTEM: READY";
-        } catch (e) { console.error(e); }
+
+            switchView(true);
+            updateUI(accounts[0]);
+            closeWalletModal();
+            document.getElementById('logText').innerText = 'SYSTEM: READY';
+        } catch (error) {
+            console.error('连接失败:', error);
+            alert('连接失败: ' + error.message);
+        }
     }
 
-    async function callGetMessage() {
-        if (!contract) return alert("请先链接钱包");
-        const msg = await contract.message();
-        alert("链上留言: " + msg);
+    function switchView(connected) {
+        const disconnected = document.getElementById('disconnected-view');
+        const connected_view = document.getElementById('connected-view');
+
+        if (connected) {
+            disconnected.classList.add('hidden');
+            connected_view.classList.remove('hidden');
+        } else {
+            disconnected.classList.remove('hidden');
+            connected_view.classList.add('hidden');
+        }
     }
 
-    async function callSetMessage() {
-        if (!contract) return alert("请先链接钱包");
-        const val = document.getElementById('msgInput').value;
+    function updateUI(address) {
+        document.getElementById('addr-display').innerText = `ADDR: ${address.substring(0, 6)}...${address.substring(38)}`;
+        fetchBalance(address);
+    }
+
+    async function fetchBalance(address) {
         try {
-            document.getElementById('logText').innerText = "SYSTEM: WAITING SIGNATURE...";
-            const tx = await contract.setMessage(val, { gasLimit: 150000 });
-            await tx.wait();
-            document.getElementById('logText').innerText = "SYSTEM: SUCCESS";
-        } catch (e) { document.getElementById('logText').innerText = "SYSTEM: FAILED"; }
+            const balance = await provider.getBalance(address);
+            const formatted = ethers.formatEther(balance);
+            document.getElementById('balance-display').innerText = `${parseFloat(formatted).toFixed(4)} ETH`;
+        } catch (error) {
+            console.error('获取余额失败:', error);
+        }
     }
 
-    async function donateEth() {
-        if (!signer) return alert("请先链接钱包");
-        const amount = document.getElementById('donateAmount').value;
+    async function getMessage() {
+        if (!contract) {
+            alert('请先连接钱包');
+            return;
+        }
         try {
-            const tx = await signer.sendTransaction({ to: DONATE_ADDR, value: ethers.parseEther(amount), gasLimit: 21000 });
+            const msg = await contract.message();
+            alert('链上留言: ' + msg);
+        } catch (error) {
+            alert('查看失败: ' + error.message);
+        }
+    }
+
+    async function setMessage() {
+        if (!contract) {
+            alert('请先连接钱包');
+            return;
+        }
+
+        const msg = document.getElementById('msg-input').value.trim();
+        if (!msg) {
+            alert('请输入留言');
+            return;
+        }
+
+        try {
+            document.getElementById('logText').innerText = 'SYSTEM: WAITING SIGNATURE...';
+            const tx = await contract.setMessage(msg, { gasLimit: 150000 });
             await tx.wait();
-            alert("感谢打赏！");
-        } catch (e) { console.error(e); }
+            document.getElementById('logText').innerText = 'SYSTEM: SUCCESS';
+        } catch (error) {
+            document.getElementById('logText').innerText = 'SYSTEM: FAILED';
+            alert('更新失败: ' + error.message);
+        }
+    }
+
+    async function donate() {
+        if (!signer) {
+            alert('请先连接钱包');
+            return;
+        }
+
+        const amount = document.getElementById('donate-amount').value;
+        if (!amount || parseFloat(amount) <= 0) {
+            alert('请输入有效金额');
+            return;
+        }
+
+        try {
+            document.getElementById('logText').innerText = 'SYSTEM: SENDING...';
+            const tx = await signer.sendTransaction({
+                to: DONATE_ADDR,
+                value: ethers.parseEther(amount),
+                gasLimit: 21000
+            });
+            await tx.wait();
+            document.getElementById('logText').innerText = 'SYSTEM: SUCCESS';
+            alert('感谢打赏！');
+        } catch (error) {
+            document.getElementById('logText').innerText = 'SYSTEM: FAILED';
+            alert('转账失败: ' + error.message);
+        }
+    }
+
+    function disconnect() {
+        provider = null;
+        signer = null;
+        contract = null;
+        switchView(false);
+        document.getElementById('logText').innerText = 'SYSTEM: STANDBY';
     }
 </script>
+
 </body>
 </html>
