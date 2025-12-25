@@ -3,114 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OKX 钱包交互测试</title>
+    <title>Cyber-DApp 交互面板</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/index.umd.min.js"></script>
     <style>
-        body { font-family: 'PingFang SC', sans-serif; background: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #262626; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; border: 1px solid #333; }
-        h2 { margin-bottom: 30px; color: #fff; }
-        .status { padding: 8px 15px; border-radius: 50px; font-size: 13px; margin-bottom: 25px; display: inline-block; background: #3d3d3d; color: #aaa; }
-        .status.connected { background: #1d392a; color: #2ecc71; border: 1px solid #2ecc71; }
-        button { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-connect { background: #fff; color: #000; }
-        .btn-connect:hover { background: #ccc; }
-        .btn-action { background: #3d3d3d; color: #fff; border: 1px solid #555; }
-        .btn-action:hover { background: #4d4d4d; }
-        input { width: calc(100% - 30px); padding: 15px; background: #1a1a1a; border: 1px solid #333; border-radius: 10px; color: white; margin: 15px 0; text-align: center; }
-        #msgBox { margin-top: 20px; padding: 15px; background: #1a1a1a; border-radius: 10px; color: #2ecc71; min-height: 20px; border: 1px dashed #333; }
+        :root {
+            --primary-blue: #00d4ff;
+            --dark-bg: #0a0e17;
+            --card-bg: #161b22;
+            --text-main: #e6edf3;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 50%, #102a43 0%, #0a0e17 100%);
+        }
+
+        .dapp-container {
+            width: 90%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border: 1px solid #30363d;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.15);
+        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { color: var(--primary-blue); font-size: 24px; text-transform: uppercase; letter-spacing: 2px; }
+
+        .status-bar {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .balance-tag { color: var(--primary-blue); font-weight: bold; font-size: 18px; margin-top: 5px; }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-connect { background: linear-gradient(90deg, #00d4ff, #0055ff); color: white; box-shadow: 0 4px 15px rgba(0, 85, 255, 0.3); }
+        .btn-action { background: #21262d; color: white; border: 1px solid #30363d; }
+        .btn-action:hover { background: #30363d; border-color: var(--primary-blue); }
+        .btn-donate { background: rgba(0, 212, 255, 0.1); color: var(--primary-blue); border: 1px solid var(--primary-blue); }
+        .btn-donate:hover { background: var(--primary-blue); color: black; }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            color: white;
+            margin: 10px 0;
+            outline: none;
+        }
+
+        input:focus { border-color: var(--primary-blue); box-shadow: 0 0 8px rgba(0, 212, 255, 0.2); }
+
+        .faucet-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #8b949e;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .faucet-link:hover { color: var(--primary-blue); }
+
+        #logText { font-size: 12px; color: #8b949e; margin-top: 15px; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>OKX 交互面板</h2>
-    <div id="statusLabel" class="status">钱包未连接</div>
-    
-    <button class="btn-connect" onclick="connectOKX()">连接 OKX 钱包</button>
-    
-    <div style="margin: 20px 0; border-top: 1px solid #333;"></div>
-    
-    <button class="btn-action" onclick="readContract()">读取链上消息</button>
-    <div id="msgBox">内容将显示在这里</div>
+<div class="dapp-container">
+    <div class="header">
+        <h1>Cyber Panel V2</h1>
+    </div>
 
-    <input type="text" id="inputField" placeholder="输入新的留言内容...">
-    <button class="btn-action" style="background: #2ecc71; color: #000; border: none;" onclick="writeContract()">更新留言</button>
+    <div class="status-bar">
+        <div id="addrDisplay">钱包：未连接</div>
+        <div id="balanceDisplay" class="balance-tag">0.00 ETH</div>
+        <div id="networkStatus" style="font-size: 11px; margin-top: 5px; color: #fa7a18;">⚠️ 请确保在 Arb Sepolia</div>
+    </div>
+
+    <button class="btn btn-connect" id="connectBtn" onclick="initWallet()">连接主流钱包</button>
     
-    <p id="txInfo" style="font-size: 11px; color: #666; margin-top: 15px;"></p>
+    <div style="margin: 20px 0; height: 1px; background: #30363d;"></div>
+
+    <input type="text" id="msgInput" placeholder="输入合约新留言...">
+    <button class="btn btn-action" onclick="callSetMessage()">更新合约内容</button>
+    <button class="btn btn-action" onclick="callGetMessage()">查看当前内容</button>
+
+    <div style="margin: 20px 0; height: 1px; background: #30363d;"></div>
+
+    <button class="btn btn-donate" onclick="donateEth()">打赏 0.001 ETH 给开发者</button>
+
+    <a href="https://www.alchemy.com/faucets/arbitrum-sepolia" target="_blank" class="faucet-link">⛽ 缺少测试币？点击前往领水站</a>
+    
+    <div id="logText">等待系统就绪...</div>
 </div>
 
 <script>
-    // 你的配置
-    const CONTRACT_ADDRESS = "0xAd074eF8dFa3c625a53185450F24203bC35160F6";
+    const CONTRACT_ADDR = "0xAd074eF8dFa3c625a53185450F24203bC35160F6";
+    const DONATE_ADDR = "0x2d2f8716607d77d3389af77e0f47e559b8b6c36a";
+    const ARB_SEPOLIA_ID = 421614n; // BigInt for v6
+
     const ABI = [
         "function message() public view returns (string)",
         "function setMessage(string memory _newMsg) public"
     ];
 
-    let provider;
-    let signer;
-    let contract;
+    let provider, signer, contract;
 
-    // 核心函数：专门连接 OKX
-    async function connectOKX() {
-        // 强制寻找 OKX 注入的对象
-        const okx = window.okxwallet;
+    async function initWallet() {
+        const uiLog = document.getElementById('logText');
+        // 多钱包兼容逻辑
+        const injectedProvider = window.okxwallet || window.ethereum;
 
-        if (!okx) {
-            alert("错误：未检测到 OKX 钱包！\n请检查：\n1. 是否安装了 OKX 插件\n2. 扩展设置里是否勾选了‘允许在无痕模式下运行’");
+        if (!injectedProvider) {
+            alert("未检测到任何钱包插件！");
             return;
         }
 
         try {
-            // 请求授权
-            const accounts = await okx.request({ method: 'eth_requestAccounts' });
+            uiLog.innerText = "正在唤起钱包授权...";
+            const accounts = await injectedProvider.request({ method: 'eth_requestAccounts' });
             
-            // 使用 Ethers.js 包装 OKX 对象
-            provider = new ethers.BrowserProvider(okx);
+            provider = new ethers.BrowserProvider(injectedProvider);
             signer = await provider.getSigner();
-            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+            
+            // 检查网络
+            const network = await provider.getNetwork();
+            if (network.chainId !== ARB_SEPOLIA_ID) {
+                uiLog.innerText = "网络错误！请切换到 Arbitrum Sepolia";
+                try {
+                    await injectedProvider.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x66eee' }], // 421614 的 16 进制
+                    });
+                } catch (e) { alert("请在钱包中手动切换到 Arbitrum Sepolia 网络"); }
+                return;
+            }
 
+            contract = new ethers.Contract(CONTRACT_ADDR, ABI, signer);
+            
             // 更新 UI
-            const addr = accounts[0];
-            const label = document.getElementById('statusLabel');
-            label.innerText = "已连接: " + addr.substring(0,6) + "..." + addr.substring(38);
-            label.className = "status connected";
-            console.log("OKX Connected:", addr);
+            const address = accounts[0];
+            document.getElementById('addrDisplay').innerText = `已连接: ${address.substring(0,6)}...${address.substring(38)}`;
+            document.getElementById('networkStatus').innerText = "✅ 已在 Arbitrum Sepolia";
+            document.getElementById('networkStatus').style.color = "#2ecc71";
+            document.getElementById('connectBtn').innerText = "钱包已就绪";
+            
+            updateBalance(address);
+            uiLog.innerText = "系统已连接";
         } catch (err) {
             console.error(err);
-            alert("连接被拒绝或出错");
+            uiLog.innerText = "连接失败";
         }
     }
 
-    // 读取合约里的 message 变量
-    async function readContract() {
+    async function updateBalance(address) {
+        const balance = await provider.getBalance(address);
+        const ethVal = ethers.formatEther(balance);
+        document.getElementById('balanceDisplay').innerText = `${parseFloat(ethVal).toFixed(4)} ETH`;
+    }
+
+    async function callGetMessage() {
         if (!contract) return alert("请先连接钱包");
         try {
-            const result = await contract.message();
-            document.getElementById('msgBox').innerText = result;
-        } catch (err) {
-            alert("读取失败，请检查是否在 Arbitrum Sepolia 网络");
-        }
+            const msg = await contract.message();
+            alert("合约当前留言: " + msg);
+        } catch (e) { console.error(e); }
     }
 
-    // 调用 setMessage 函数
-    async function writeContract() {
+    async function callSetMessage() {
         if (!contract) return alert("请先连接钱包");
-        const val = document.getElementById('inputField').value;
+        const val = document.getElementById('msgInput').value;
         if (!val) return alert("请输入内容");
-
+        
         try {
-            document.getElementById('txInfo').innerText = "请在 OKX 钱包弹窗中确认...";
+            document.getElementById('logText').innerText = "请在钱包中确认交易...";
             const tx = await contract.setMessage(val);
-            
-            document.getElementById('txInfo').innerText = "交易已提交，等待上链...";
-            await tx.wait(); // 等待交易打包
-            
-            document.getElementById('txInfo').innerText = "更新成功！";
-            readContract(); // 刷新显示
-        } catch (err) {
-            console.error(err);
-            document.getElementById('txInfo').innerText = "交易失败。";
+            document.getElementById('logText').innerText = "交易打包中...";
+            await tx.wait();
+            document.getElementById('logText').innerText = "修改成功！";
+            alert("上链成功！");
+        } catch (e) { 
+            document.getElementById('logText').innerText = "交易取消";
+        }
+    }
+
+    async function donateEth() {
+        if (!signer) return alert("请先连接钱包");
+        try {
+            document.getElementById('logText').innerText = "准备打赏 0.001 ETH...";
+            const tx = await signer.sendTransaction({
+                to: DONATE_ADDR,
+                value: ethers.parseEther("0.001")
+            });
+            await tx.wait();
+            alert("感谢打赏！交易已完成。");
+            document.getElementById('logText').innerText = "打赏成功，感恩！";
+        } catch (e) {
+            document.getElementById('logText').innerText = "打赏操作取消";
         }
     }
 </script>
