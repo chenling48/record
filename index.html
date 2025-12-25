@@ -3,233 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber-DApp 交互面板 V3.1</title>
+    <title>Cyber Portal V4.1 - Particle Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/index.umd.min.js"></script>
     <style>
         :root {
             --primary-blue: #00d4ff;
-            --dark-bg: #0a0e17;
-            --card-bg: #161b22;
+            --dark-bg: #030508;
+            --card-bg: rgba(22, 27, 34, 0.85); /* 半透明背景，透出特效 */
             --text-main: #e6edf3;
         }
 
         body {
             background-color: var(--dark-bg);
             color: var(--text-main);
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             margin: 0;
+            overflow: hidden; /* 防止特效导致的滚动条 */
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-image: radial-gradient(circle at 50% 50%, #102a43 0%, #0a0e17 100%);
+        }
+
+        /* 特效画布层 */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* 放在所有内容下面 */
         }
 
         .dapp-container {
             width: 90%;
             max-width: 480px;
             background: var(--card-bg);
-            border: 1px solid #30363d;
+            backdrop-filter: blur(10px); /* 毛玻璃效果 */
+            border: 1px solid rgba(48, 54, 61, 0.8);
             border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 0 30px rgba(0, 212, 255, 0.15);
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.1);
+            z-index: 10;
         }
 
-        .header { text-align: center; margin-bottom: 25px; }
-        .header h1 { color: var(--primary-blue); font-size: 24px; text-transform: uppercase; letter-spacing: 2px; margin: 0; }
-
+        .header h1 { color: var(--primary-blue); font-size: 22px; text-transform: uppercase; letter-spacing: 2px; text-align: center; margin: 0;}
+        
         .status-bar {
             background: rgba(0, 212, 255, 0.05);
             border: 1px solid rgba(0, 212, 255, 0.2);
             padding: 15px;
             border-radius: 12px;
-            margin-bottom: 20px;
-        }
-
-        .balance-tag { color: var(--primary-blue); font-weight: bold; font-size: 20px; margin-top: 5px; }
-
-        .btn {
-            width: 100%;
-            padding: 14px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 15px;
-        }
-
-        .btn-connect { background: linear-gradient(90deg, #00d4ff, #0055ff); color: white; box-shadow: 0 4px 15px rgba(0, 85, 255, 0.3); }
-        .btn-action { background: #21262d; color: white; border: 1px solid #30363d; }
-        .btn-action:hover { border-color: var(--primary-blue); }
-        .btn-donate { background: var(--primary-blue); color: black; }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            box-sizing: border-box;
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            color: white;
-            margin-top: 5px;
-            outline: none;
-        }
-
-        .faucet-link {
-            display: block;
+            margin: 20px 0;
             text-align: center;
-            margin-top: 20px;
-            color: #8b949e;
-            text-decoration: none;
-            font-size: 13px;
         }
 
-        #logText { font-size: 12px; color: var(--primary-blue); margin-top: 15px; text-align: center; min-height: 18px; }
+        .balance-tag { color: var(--primary-blue); font-weight: bold; font-size: 24px; margin: 5px 0; }
+        .wallet-options { display: flex; gap: 10px; margin-bottom: 20px; }
+        
+        .btn { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-okx { background: #fff; color: #000; }
+        .btn-mm { background: #f6851b; color: white; }
+        .btn-action { background: #21262d; color: white; border: 1px solid #30363d; }
+        .btn-donate { background: var(--primary-blue); color: black; font-size: 16px; width: 100%; }
+
+        input { width: 100%; padding: 12px; box-sizing: border-box; background: rgba(13, 17, 23, 0.8); border: 1px solid #30363d; border-radius: 8px; color: white; margin-top: 5px; outline: none; }
+        #logText { font-size: 11px; color: var(--primary-blue); margin-top: 15px; text-align: center; font-family: monospace; }
+        .faucet-link { display: block; text-align: center; margin-top: 15px; color: #8b949e; font-size: 12px; text-decoration: none; }
     </style>
 </head>
 <body>
 
+<canvas id="particle-canvas"></canvas>
+
 <div class="dapp-container">
     <div class="header">
-        <h1>Cyber Portal</h1>
+        <h1>Cyber Portal V4.1</h1>
+        <p style="text-align:center; font-size: 10px; color: #555; margin-top:5px;">AI-GENERATED NEURAL NETWORK UI</p>
     </div>
 
     <div class="status-bar">
-        <div id="addrDisplay" style="font-size: 13px;">钱包：未连接</div>
+        <div id="addrDisplay" style="font-size: 12px; color: #8b949e;">等待钱包连接...</div>
         <div id="balanceDisplay" class="balance-tag">0.0000 ETH</div>
-        <div id="networkStatus" style="font-size: 11px; margin-top: 5px; color: #fa7a18;">⚠️ 网络检测中...</div>
+        <div id="networkStatus" style="font-size: 11px; color: #fa7a18;">● 离线状态</div>
     </div>
 
-    <button class="btn btn-connect" id="connectBtn" onclick="initWallet()">链接钱包</button>
+    <div class="wallet-options">
+        <button class="btn btn-okx" onclick="connect('okx')">链接 OKX 钱包</button>
+        <button class="btn btn-mm" onclick="connect('mm')">链接 MetaMask</button>
+    </div>
     
-    <div style="margin: 20px 0; height: 1px; background: #30363d;"></div>
-
-    <div style="text-align:left; font-size:12px; color:#8b949e; margin-bottom:5px;">合约留言互动</div>
-    <input type="text" id="msgInput" placeholder="输入内容...">
-    <div style="display: flex; gap: 10px;">
+    <input type="text" id="msgInput" placeholder="输入新的链上留言...">
+    <div style="display: flex; gap: 8px;">
         <button class="btn btn-action" onclick="callSetMessage()" style="flex: 2;">更新留言</button>
         <button class="btn btn-action" onclick="callGetMessage()" style="flex: 1;">查看</button>
     </div>
 
-    <div style="margin: 20px 0; height: 1px; background: #30363d;"></div>
+    <div style="margin: 15px 0; height: 1px; background: #333;"></div>
 
-    <div style="text-align:left; font-size:12px; color:#8b949e; margin-bottom:5px;">自定义打赏 (ETH)</div>
     <input type="number" id="donateAmount" step="0.001" value="0.001">
-    <button class="btn btn-donate" onclick="donateEth()">立即打赏给作者</button>
+    <button class="btn btn-donate" onclick="donateEth()">立即打赏签名</button>
 
-    <a href="https://www.alchemy.com/faucets/arbitrum-sepolia" target="_blank" class="faucet-link">⛽ 点击前往领水站 (Alchemy)</a>
+    <a href="https://www.alchemy.com/faucets/arbitrum-sepolia" target="_blank" class="faucet-link">⛽ 缺少测试币？点击前往领水站</a>
     
-    <div id="logText">等待连接...</div>
+    <div id="logText">SYSTEM: STANDBY</div>
 </div>
 
 <script>
+    /* --- 粒子特效逻辑 --- */
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const mouse = { x: null, y: null, radius: 150 };
+
+    window.addEventListener('mousemove', (e) => { mouse.x = e.x; mouse.y = e.y; });
+    window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; initParticles(); });
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 2 + 1;
+            this.baseX = this.x;
+            this.baseY = this.y;
+            this.density = (Math.random() * 30) + 1;
+        }
+        draw() {
+            ctx.fillStyle = 'rgba(0, 212, 255, 0.8)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+        }
+        update() {
+            let dx = mouse.x - this.x;
+            let dy = mouse.y - this.y;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+            let forceDirectionX = dx / distance;
+            let forceDirectionY = dy / distance;
+            let maxDistance = mouse.radius;
+            let force = (maxDistance - distance) / maxDistance;
+            let directionX = forceDirectionX * force * this.density;
+            let directionY = forceDirectionY * force * this.density;
+
+            if (distance < mouse.radius) {
+                this.x -= directionX;
+                this.y -= directionY;
+            } else {
+                if (this.x !== this.baseX) {
+                    let dx = this.x - this.baseX;
+                    this.x -= dx / 10;
+                }
+                if (this.y !== this.baseY) {
+                    let dy = this.y - this.baseY;
+                    this.y -= dy / 10;
+                }
+            }
+        }
+    }
+
+    function initParticles() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        particles = [];
+        for (let i = 0; i < 150; i++) particles.push(new Particle());
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particles.length; i++) {
+            particles[i].draw();
+            particles[i].update();
+            // 连线逻辑
+            for (let j = i; j < particles.length; j++) {
+                let dx = particles[i].x - particles[j].x;
+                let dy = particles[i].y - particles[j].y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 100) {
+                    ctx.strokeStyle = 'rgba(0, 212, 255,' + (1 - dist/100) * 0.2 + ')';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.stroke();
+                }
+            }
+        }
+        requestAnimationFrame(animate);
+    }
+    initParticles();
+    animate();
+
+    /* --- Web3 合约逻辑 --- */
     const CONTRACT_ADDR = "0xAd074eF8dFa3c625a53185450F24203bC35160F6";
     const DONATE_ADDR = "0x2d2f8716607d77d3389af77e0f47e559b8b6c36a";
-    const ARB_SEPOLIA_ID = 421614n;
-
-    const ABI = [
-        "function message() public view returns (string)",
-        "function setMessage(string memory _newMsg) public"
-    ];
-
+    const ABI = ["function message() public view returns (string)", "function setMessage(string memory _newMsg) public"];
     let provider, signer, contract;
 
-    async function initWallet() {
-        const uiLog = document.getElementById('logText');
-        const external = window.okxwallet || window.ethereum;
-
-        if (!external) {
-            alert("未检测到钱包插件！");
-            return;
-        }
-
+    async function connect(type) {
+        let injected = (type === 'okx') ? window.okxwallet : window.ethereum;
+        if (!injected) return alert("未检测到钱包插件");
         try {
-            uiLog.innerText = "正在请求钱包授权...";
-            await external.request({ method: 'eth_requestAccounts' });
-            
-            provider = new ethers.BrowserProvider(external);
+            const accounts = await injected.request({ method: 'eth_requestAccounts' });
+            provider = new ethers.BrowserProvider(injected);
             signer = await provider.getSigner();
-            
-            const network = await provider.getNetwork();
-            if (network.chainId !== ARB_SEPOLIA_ID) {
-                uiLog.innerText = "请在钱包中切换到 Arb Sepolia";
-                try {
-                    await external.request({
-                        method: 'wallet_switchEthereumChain',
-                        params: [{ chainId: '0x66eee' }],
-                    });
-                } catch (e) { alert("网络错误：请在钱包内手动切换到 Arbitrum Sepolia"); return; }
-            }
-
             contract = new ethers.Contract(CONTRACT_ADDR, ABI, signer);
-            const address = await signer.getAddress();
-            
-            document.getElementById('addrDisplay').innerText = `已连接: ${address.substring(0,6)}...${address.substring(38)}`;
-            document.getElementById('networkStatus').innerText = "✅ 已接入 Arbitrum Sepolia";
-            document.getElementById('networkStatus').style.color = "#2ecc71";
-            document.getElementById('connectBtn').innerText = "钱包已绑定";
-            
-            const balance = await provider.getBalance(address);
+            document.getElementById('addrDisplay').innerText = `ADDR: ${accounts[0].substring(0,8)}...${accounts[0].substring(34)}`;
+            const balance = await provider.getBalance(accounts[0]);
             document.getElementById('balanceDisplay').innerText = `${parseFloat(ethers.formatEther(balance)).toFixed(4)} ETH`;
-            uiLog.innerText = "交互系统就绪";
-        } catch (err) {
-            uiLog.innerText = "连接被取消";
-            console.error(err);
-        }
+            document.getElementById('networkStatus').innerText = "● ONLINE";
+            document.getElementById('networkStatus').style.color = "#2ecc71";
+            document.getElementById('logText').innerText = "SYSTEM: READY";
+        } catch (e) { console.error(e); }
     }
 
     async function callGetMessage() {
         if (!contract) return alert("请先链接钱包");
-        try {
-            const msg = await contract.message();
-            alert("链上数据内容: " + msg);
-        } catch (e) { alert("读取失败"); }
+        const msg = await contract.message();
+        alert("链上留言: " + msg);
     }
 
     async function callSetMessage() {
         if (!contract) return alert("请先链接钱包");
         const val = document.getElementById('msgInput').value;
-        if (!val) return alert("内容不能为空");
-        
         try {
-            document.getElementById('logText').innerText = "正在唤起签名确认窗口...";
-            // 增加手动 GasLimit 确保弹窗弹出
-            const tx = await contract.setMessage(val, {
-                gasLimit: 120000
-            });
-            document.getElementById('logText').innerText = "交易打包中，请稍候...";
+            document.getElementById('logText').innerText = "SYSTEM: WAITING SIGNATURE...";
+            const tx = await contract.setMessage(val, { gasLimit: 150000 });
             await tx.wait();
-            document.getElementById('logText').innerText = "更新成功！";
-            alert("上链成功！");
-        } catch (e) { 
-            document.getElementById('logText').innerText = "签名取消或失败";
-            console.error(e);
-        }
+            document.getElementById('logText').innerText = "SYSTEM: SUCCESS";
+        } catch (e) { document.getElementById('logText').innerText = "SYSTEM: FAILED"; }
     }
 
     async function donateEth() {
         if (!signer) return alert("请先链接钱包");
         const amount = document.getElementById('donateAmount').value;
-        if (!amount || amount <= 0) return alert("金额无效");
-
         try {
-            document.getElementById('logText').innerText = "准备发起转账签名...";
-            const tx = await signer.sendTransaction({
-                to: DONATE_ADDR,
-                value: ethers.parseEther(amount.toString()),
-                gasLimit: 50000
-            });
-            document.getElementById('logText').innerText = "转账中...";
+            const tx = await signer.sendTransaction({ to: DONATE_ADDR, value: ethers.parseEther(amount), gasLimit: 21000 });
             await tx.wait();
-            alert("打赏成功，感谢支持！");
-            document.getElementById('logText').innerText = "打赏已完成";
-        } catch (e) {
-            document.getElementById('logText').innerText = "转账已取消";
-        }
+            alert("感谢打赏！");
+        } catch (e) { console.error(e); }
     }
 </script>
-
 </body>
 </html>
