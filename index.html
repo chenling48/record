@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的第一个 Web3 交互页面</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/index.umd.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 400px; text-align: center; }
+        h2 { color: #333; margin-bottom: 20px; }
+        .status-badge { font-size: 12px; padding: 5px 10px; border-radius: 20px; background: #eee; color: #666; margin-bottom: 20px; display: inline-block; }
+        button { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        .btn-connect { background-color: #007bff; color: white; }
+        .btn-read { background-color: #28a745; color: white; }
+        .btn-write { background-color: #ffc107; color: #333; }
+        input { width: calc(100% - 24px); padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+        #messageDisplay { font-weight: bold; color: #007bff; margin-top: 15px; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>DApp 交互面板</h2>
+    <div id="walletStatus" class="status-badge">钱包未连接</div>
+    
+    <button class="btn-connect" onclick="connectWallet()">连接钱包</button>
+    
+    <hr>
+    
+    <div id="readSection">
+        <button class="btn-read" onclick="getMessage()">读取合约消息</button>
+        <div id="messageDisplay">消息将在这里显示</div>
+    </div>
+    
+    <hr>
+    
+    <div id="writeSection">
+        <input type="text" id="newMessageInput" placeholder="输入新的留言内容...">
+        <button class="btn-write" onclick="setMessage()">更新合约消息</button>
+    </div>
+    
+    <p id="txStatus" style="font-size: 12px; color: #888;"></p>
+</div>
+
+<script>
+    // 你的合约配置
+    const contractAddress = "0xAd074eF8dFa3c625a53185450F24203bC35160F6";
+    const abi = [
+        "function message() public view returns (string)",
+        "function setMessage(string memory _newMsg) public"
+    ];
+
+    let signer;
+    let contract;
+
+    // 1. 连接钱包
+    async function connectWallet() {
+        if (window.ethereum) {
+            try {
+                const provider = new ethers.BrowserProvider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = await provider.getSigner();
+                contract = new ethers.Contract(contractAddress, abi, signer);
+                
+                const address = await signer.getAddress();
+                document.getElementById('walletStatus').innerText = "已连接: " + address.substring(0,6) + "..." + address.substring(38);
+                document.getElementById('walletStatus').style.background = "#d4edda";
+                document.getElementById('walletStatus').style.color = "#155724";
+            } catch (error) {
+                alert("连接失败: " + error.message);
+            }
+        } else {
+            alert("未检测到插件。请在 OKX 钱包的 DApp 浏览器中打开或安装插件。");
+        }
+    }
+
+    // 2. 读取数据 (message 变量)
+    async function getMessage() {
+        if (!contract) return alert("请先连接钱包！");
+        try {
+            const msg = await contract.message();
+            document.getElementById('messageDisplay').innerText = "当前内容: " + msg;
+        } catch (error) {
+            console.error(error);
+            document.getElementById('messageDisplay').innerText = "读取失败，请确保在 Arbitrum Sepolia 网络上。";
+        }
+    }
+
+    // 3. 写入数据 (setMessage 函数)
+    async function setMessage() {
+        if (!contract) return alert("请先连接钱包！");
+        const newText = document.getElementById('newMessageInput').value;
+        if (!newText) return alert("请输入内容！");
+
+        try {
+            document.getElementById('txStatus').innerText = "正在请求钱包确认...";
+            const tx = await contract.setMessage(newText);
+            
+            document.getElementById('txStatus').innerText = "交易已提交，等待区块确认...";
+            await tx.wait(); // 等待交易打包上链
+            
+            document.getElementById('txStatus').innerText = "更新成功！";
+            getMessage(); // 成功后自动刷新显示
+        } catch (error) {
+            console.error(error);
+            document.getElementById('txStatus').innerText = "交易失败或用户取消。";
+        }
+    }
+</script>
+
+</body>
+</html>
