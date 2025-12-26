@@ -388,6 +388,11 @@
             <button class="btn btn-action" onclick="getMessage()" style="flex: 1;">查看</button>
         </div>
 
+        <div style="margin: 10px 0; padding: 12px; background: rgba(0, 212, 255, 0.05); border: 1px solid rgba(0, 212, 255, 0.2); border-radius: 8px; min-height: 40px;">
+            <div style="font-size: 10px; color: #8b949e; margin-bottom: 5px;">当前留言：</div>
+            <div id="current-msg" style="font-size: 14px; color: var(--primary-blue); word-break: break-all;">暂无留言</div>
+        </div>
+
         <div class="divider"></div>
 
         <input type="number" id="donate-amount" step="0.001" value="0.001" min="0">
@@ -654,14 +659,18 @@
             console.log('读取到的留言:', msg);
             document.getElementById('logText').innerText = 'SYSTEM: SUCCESS';
             
+            // 显示在界面上
             if (!msg || msg === '') {
+                document.getElementById('current-msg').innerText = '暂无留言';
                 alert('暂无留言');
             } else {
-                alert('📝 链上留言:\n\n' + msg);
+                document.getElementById('current-msg').innerText = msg;
+                alert('✓ 成功读取留言！\n\n' + msg);
             }
         } catch (error) {
             document.getElementById('logText').innerText = 'SYSTEM: FAILED';
             console.error('查看失败详情:', error);
+            document.getElementById('current-msg').innerText = '读取失败: ' + error.message;
             alert('查看失败: ' + error.message);
         }
     }
@@ -678,7 +687,6 @@
             return;
         }
 
-        // 检查是否是中文
         if (msg.length > 200) {
             alert('留言过长，请控制在200字以内');
             return;
@@ -688,9 +696,8 @@
             document.getElementById('logText').innerText = 'SYSTEM: WAITING SIGNATURE...';
             console.log('准备发送留言:', msg);
             
-            // 直接发送字符串，ethers 会自动处理编码
             const tx = await contract.setMessage(msg, { 
-                gasLimit: 300000  // 增加 gas 限额以支持更长的字符串
+                gasLimit: 300000
             });
             console.log('交易已发送:', tx.hash);
             document.getElementById('logText').innerText = 'SYSTEM: PENDING...';
@@ -699,7 +706,10 @@
             console.log('交易已确认:', receipt);
             document.getElementById('logText').innerText = 'SYSTEM: SUCCESS';
             document.getElementById('msg-input').value = '';
-            alert('✓ 留言已成功更新！\n\n留言内容: ' + msg);
+            
+            // 自动更新显示
+            document.getElementById('current-msg').innerText = msg;
+            alert('✓ 留言已成功更新！\n\n新留言: ' + msg);
         } catch (error) {
             document.getElementById('logText').innerText = 'SYSTEM: FAILED';
             console.error('更新失败详情:', error);
