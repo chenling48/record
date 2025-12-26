@@ -648,9 +648,13 @@
             return;
         }
         try {
+            document.getElementById('logText').innerText = 'SYSTEM: LOADING...';
             const msg = await contract.message();
+            document.getElementById('logText').innerText = 'SYSTEM: SUCCESS';
             alert('链上留言: ' + msg);
         } catch (error) {
+            document.getElementById('logText').innerText = 'SYSTEM: FAILED';
+            console.error('查看失败:', error);
             alert('查看失败: ' + error.message);
         }
     }
@@ -669,11 +673,18 @@
 
         try {
             document.getElementById('logText').innerText = 'SYSTEM: WAITING SIGNATURE...';
+            console.log('准备发送留言:', msg);
             const tx = await contract.setMessage(msg, { gasLimit: 150000 });
-            await tx.wait();
+            console.log('交易已发送:', tx.hash);
+            document.getElementById('logText').innerText = 'SYSTEM: PENDING...';
+            const receipt = await tx.wait();
+            console.log('交易已确认:', receipt);
             document.getElementById('logText').innerText = 'SYSTEM: SUCCESS';
+            document.getElementById('msg-input').value = '';
+            alert('留言已成功更新！');
         } catch (error) {
             document.getElementById('logText').innerText = 'SYSTEM: FAILED';
+            console.error('更新失败:', error);
             alert('更新失败: ' + error.message);
         }
     }
