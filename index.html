@@ -649,12 +649,19 @@
         }
         try {
             document.getElementById('logText').innerText = 'SYSTEM: LOADING...';
+            console.log('正在读取留言...');
             const msg = await contract.message();
+            console.log('读取到的留言:', msg);
             document.getElementById('logText').innerText = 'SYSTEM: SUCCESS';
-            alert('链上留言: ' + msg);
+            
+            if (!msg || msg === '') {
+                alert('暂无留言');
+            } else {
+                alert('📝 链上留言:\n\n' + msg);
+            }
         } catch (error) {
             document.getElementById('logText').innerText = 'SYSTEM: FAILED';
-            console.error('查看失败:', error);
+            console.error('查看失败详情:', error);
             alert('查看失败: ' + error.message);
         }
     }
@@ -671,20 +678,31 @@
             return;
         }
 
+        // 检查是否是中文
+        if (msg.length > 200) {
+            alert('留言过长，请控制在200字以内');
+            return;
+        }
+
         try {
             document.getElementById('logText').innerText = 'SYSTEM: WAITING SIGNATURE...';
             console.log('准备发送留言:', msg);
-            const tx = await contract.setMessage(msg, { gasLimit: 150000 });
+            
+            // 直接发送字符串，ethers 会自动处理编码
+            const tx = await contract.setMessage(msg, { 
+                gasLimit: 300000  // 增加 gas 限额以支持更长的字符串
+            });
             console.log('交易已发送:', tx.hash);
             document.getElementById('logText').innerText = 'SYSTEM: PENDING...';
+            
             const receipt = await tx.wait();
             console.log('交易已确认:', receipt);
             document.getElementById('logText').innerText = 'SYSTEM: SUCCESS';
             document.getElementById('msg-input').value = '';
-            alert('留言已成功更新！');
+            alert('✓ 留言已成功更新！\n\n留言内容: ' + msg);
         } catch (error) {
             document.getElementById('logText').innerText = 'SYSTEM: FAILED';
-            console.error('更新失败:', error);
+            console.error('更新失败详情:', error);
             alert('更新失败: ' + error.message);
         }
     }
